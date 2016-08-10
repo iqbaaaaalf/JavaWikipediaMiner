@@ -210,7 +210,7 @@ private String ambilKategori(String ask, String p, int id) throws IOException{
 	return hasil;
 }
 
-private String ambilArtikel(String ask, String p, int id) throws IOException{
+private String ambilArtikel(String ask, String p) throws IOException{
 	Page kategori = _wikipedia.getCategoryByTitle(p);
 	String judul = null;
 	String query = ask;
@@ -257,7 +257,7 @@ private Integer getInt(String prompt, int min, int max) throws IOException {
 }
 
 private String getString(String prompt) throws IOException{
-	System.out.println(prompt + "(atau ENTER untuk mengosongkan");
+	System.out.println(prompt + "(atau ENTER untuk mengosongkan)");
 	String line = _input.readLine();
 	if (line.trim().equals(""))
 		return null;
@@ -265,7 +265,7 @@ private String getString(String prompt) throws IOException{
 }
 
 private void getArticleByCategory() throws Exception{
-	Iterator<Page> iter = _wikipedia.getPageIterator(PageType.category);
+	Iterator<Page> iter = _wikipedia.getPageIterator(PageType.article);
 	Iterator<Page> iter2 = _wikipedia.getPageIterator(PageType.article);
 	_input = new BufferedReader(new InputStreamReader(System.in));
 	Page p;
@@ -274,88 +274,75 @@ private void getArticleByCategory() throws Exception{
 	List<String> artikelTerkait = new ArrayList<String>();
 	List<String> kategoriTerkait = new ArrayList<String>(); 
 	
-	while((termKategori = getString("Silakan masukan kategory yang anda mau cari")) != null){
-//			while(iter.hasNext()){
-			for (int i=0; i<66890; i++){
+	while((termKategori = getString("Silakan masukan kategori yang anda mau cari")) != null){
+		int k = 0;
+		System.out.println("\nMohon tunggu~\n");
+			for (k=0; k<633722; k++){
 				Page p1 = iter.next();
 				p=p1;
-				System.out.println(p.getId());
 				String isi = ambilKategori(termKategori, p.getTitle(), p.getId());
 				if (isi != null){
 				kategoriTerkait.add(isi);
 				}
 			}
 			
-			if(kategoriTerkait.size() == 1){
-				System.out.println(" - [1] " + kategoriTerkait.get(0)) ;
-				Integer kategoriIndex = getInt("Pilih Kategori yang anda cari", 1, kategoriTerkait.size());
-//				while(iter2.hasNext()){
-				for (int i=0; i<633722; i++){
-					Page p1 = iter2.next();
-					p=p1;
-					System.out.println(p.getId());
-					String artikel = ambilArtikel(kategoriTerkait.get(0), p.getTitle(), p.getId());
-					if (artikel != null)
-					artikelTerkait.add(artikel);
-				}
-				
-				if (artikelTerkait.size() == 1){
-					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(1));
-					System.out.println(penampung.getMarkup());
-				}else{
-					System.out.println("== kategori " + termKategori + " ada di dalam beberapa artikel yaitu :");
-					for (int i=0 ; i<artikelTerkait.size() ; i++) {
-			            System.out.println(" - [" + (i+1) + "] " + artikelTerkait.get(i));
-				}
-					Integer artikelIndex = getInt("Pilih artikel yang anda cari", 1, artikelTerkait.size());
-					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(artikelIndex-1));
-					System.out.println(penampung.getMarkup());
-				}
-				
+//			if(kategoriTerkait.size() == 1){
+//				System.out.println(" - [1] " + kategoriTerkait.get(0)) ;
+//				Integer kategoriIndex = getInt("Pilih Kategori yang anda cari", 1, kategoriTerkait.size());
+////				while(iter2.hasNext()){
+//				for (int i=0; i<633722; i++){
+//					Page p1 = iter2.next();
+//					p=p1;
+//					System.out.println(p.getId());
+//					String artikel = ambilArtikel(kategoriTerkait.get(0), p.getTitle(), p.getId());
+//					if (artikel != null)
+//					artikelTerkait.add(artikel);
+//				}
+//				
+//				if (artikelTerkait.size() == 1){
+//					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(1));
+//					System.out.println(penampung.getMarkup());
+//				}else{
+//					System.out.println("== kategori " + termKategori + " ada di dalam beberapa artikel yaitu :");
+//					for (int i=0 ; i<artikelTerkait.size() ; i++) {
+//			            System.out.println(" - [" + (i+1) + "] " + artikelTerkait.get(i));
+//				}
+//					Integer artikelIndex = getInt("Pilih artikel yang anda cari", 1, artikelTerkait.size());
+//					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(artikelIndex-1));
+//					System.out.println(penampung.getMarkup());
+//				}
+//				
+//			}else 
+			if(kategoriTerkait.size() == 0){
+					System.out.println("\n== Mohon maaf kata kunci untuk kategori yang anda cari tidak ada ==\n");
 			}else{
 				System.out.println("== term kategori " + termKategori + " ada di dalam beberapa kategori yaitu :");
 				for (int i=0 ; i<kategoriTerkait.size() ; i++) {
 		            System.out.println(" - [" + (i+1) + "] " + kategoriTerkait.get(i));
 		        }	
 				Integer kategoriIndex = getInt("Pilih Kategori yang anda cari", 1, kategoriTerkait.size());
+				System.out.println("\nMohon tunggu~\n");
 				for (int i=0; i<633722; i++){
 					Page p1 = iter2.next();
 					p=p1;
-					System.out.println(p.getId());
-					String artikel = ambilArtikel(kategoriTerkait.get(kategoriIndex-1), p.getTitle(), p.getId());
+					String artikel = ambilArtikel(kategoriTerkait.get(kategoriIndex-1), p.getTitle());
 					if (artikel != null)
 					artikelTerkait.add(artikel);
 				}
 				
-				if (artikelTerkait.size() == 1){
-					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(1));
-					System.out.println(penampung.getMarkup());
+				if (artikelTerkait.size() == 0){
+					System.out.println("\n== Mohon maaf, terjadi kesalahan. ==\n");
 				}else{
-					System.out.println("== kategori " + termKategori + " ada di dalam beberapa artikel yaitu :");
+					System.out.println("== kategori '" + kategoriTerkait.get(kategoriIndex-1) + "' ada di dalam beberapa artikel yaitu :");
 					for (int i=0 ; i<artikelTerkait.size() ; i++) {
 			            System.out.println(" - [" + (i+1) + "] " + artikelTerkait.get(i));
 				}
 					Integer artikelIndex = getInt("Pilih artikel yang anda cari", 1, artikelTerkait.size());
 					penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(artikelIndex-1));
-					System.out.println(penampung.getMarkup());
+					System.out.println(penampung.getMarkup()+ "\n");
 				}
 			}
 	}
-				
-				
-			
-				
-//				
-//				System.out.println("== Kategori " + termKategori + " mencangkup beberapa artikel yaitu :");
-//				for (int i=0 ; i<artikelTerkait.size() ; i++) {
-//		            System.out.println(" - [" + (i+1) + "] " + artikelTerkait.get(i)) ;
-//		        }
-//				Integer artikelIndex = getInt("Pilih artikel yang anda inginkan", 1, artikelTerkait.size()) ;
-//				if (artikelIndex != null){
-//				penampung = _wikipedia.getArticleByTitle(artikelTerkait.get(artikelIndex));
-//				System.out.println(c.getSentenceClean(penampung));
-//				}
-//			}
 	
 }
 

@@ -142,7 +142,7 @@ public class Cleaner {
 	}
 	
 	public Boolean isKategoriFix(String kategori, String query){
-		Pattern p = Pattern.compile("(\b"+query+"\b)");
+		Pattern p = Pattern.compile(query);
 		Matcher m = p.matcher(kategori);
 		
 		if (m.find()){
