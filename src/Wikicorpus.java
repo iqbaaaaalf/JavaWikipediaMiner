@@ -21,6 +21,7 @@ public class Wikicorpus {
 		static Wikipedia _wikipedia;
 		BufferedWriter out;
 		BufferedReader _input;
+		Cleaner c = new Cleaner();
 		
 public Wikicorpus(WikipediaConfiguration conf){ 
 		// memuat configurasi wiki, untuk akses ke database barkeley
@@ -170,15 +171,20 @@ private void boxer() throws Exception {
 	}
 }
 
-private void doc(Page p){
+private void doc(Page p) throws IOException{
 	Cleaner c = new Cleaner();
 	String hasil = c.getDesc(p);
+	int id = p.getId();
 	
-	System.out.println(hasil);
+	out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/document/"+ id + ".doc.txt"));
+	out.write(hasil);
+	out.newLine();
+	out.close();
+	System.out.println("Artikel dengan id " +id+ " telah di diextract boxnya");
 	
 }
 
-private void docer() {
+private void docer() throws IOException {
 	 Page article = _wikipedia.getPageById(44);
 	 doc(article);
 	 
@@ -242,7 +248,7 @@ private String getString(String prompt) throws IOException{
 	return line;
 }
 
-private void getArticleByCategory() throws Exception{
+public void getArticleByCategory() throws Exception{
 	_input = new BufferedReader(new InputStreamReader(System.in));
 	Page p;
 	String termKategori;
@@ -259,8 +265,11 @@ private void getArticleByCategory() throws Exception{
 				String isi = ambilKategori(termKategori, p.getTitle(), p.getId());
 				if (isi != null){
 				kategoriTerkait.add(isi);
+				if(k == 66889)
+					((BufferedReader) iter).close();
 				}
 			}
+			
 
 			if(kategoriTerkait.size() == 0){
 					System.out.println("\n== Mohon maaf kata kunci untuk kategori yang anda cari tidak ada ==\n");
@@ -290,6 +299,8 @@ private void getArticleByCategory() throws Exception{
 			           
 			       }
 			}
+			
+			kategoriTerkait.clear();
 	}
 }
 
@@ -299,7 +310,7 @@ private void getArticleByCategory() throws Exception{
  * 
  */
 
-private void getCategoryParentChild(int id){
+public void getCategoryParentChild(int id){
 	
 	Page article = _wikipedia.getPageById(id);
 //    System.out.println(article.getType());
@@ -342,7 +353,65 @@ private void getCategoryParentChild(int id){
        
    }
 }
+
+	public void getDescFromArticle() throws Exception{
+		_input = new BufferedReader(new InputStreamReader(System.in));
+		Page p;
+		String termKategori;
+		Page penampung;
+		List<String> kategoriTerkait = new ArrayList<String>(); 
+		
+		while((termKategori = getString("Silakan masukan kategori yang anda mau cari")) != null){
+			int k = 0;
+			Iterator<Page> iter = _wikipedia.getPageIterator(PageType.category);
+			System.out.println("\nMohon tunggu~\n");
+				for (k=0; k<66889; k++){
+					Page p1 = iter.next();
+					p=p1;
+					String isi = ambilKategori(termKategori, p.getTitle(), p.getId());
+					if (isi != null){
+					kategoriTerkait.add(isi);
+					if(k == 66889)
+						((BufferedReader) iter).close();
+					}
+				}
+				
+				for (int i=0 ; i<kategoriTerkait.size() ; i++) {
+					System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - eksraksi dimulai");
+					
+					Category kategori = _wikipedia.getCategoryByTitle(kategoriTerkait.get(i));
+					Category[] listChild = kategori.getChildCategories();
+					Article[] listArtikel = kategori.getChildArticles();
+					String hasil = "";
+					
+					/*
+					 * untuk handle jika suatu kategori memeiliki child
+					 */
+					if (listChild.length != 0){
+						for (int l=0 ; l<listChild.length ; l++) {
+							kategoriTerkait.addAll((Collection<? extends String>) listChild[l]);
+						}
+					}
+					
+					for (int j=0 ; j<listArtikel.length ; j++) { 
+						System.out.println("	- Artikel '" +  listArtikel[j].getTitle() + "' - ekstraksi dimulai");
+						hasil = c.getDesc(listArtikel[j]);
+			
+						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/"+ listArtikel[j].getId() + ".doc.txt"));
+						out.write(hasil);
+						out.newLine();
+						out.close();
+						
+						System.out.println("	-Artikel dengan id " +listArtikel[j].getTitle()+ " telah di diextract boxnya");
+			           }
+					System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - ekstraksi selesai");
+		        }
+				
+				kategoriTerkait.clear();
+		}
+	}
 	
+
     public static void main(String args[]) throws Exception {
     	WikipediaConfiguration conf = new WikipediaConfiguration(new File("X:/Database Berkeley/wikipedia-miner-1.2.0/wikipedia-template.xml"));
     	Wikicorpus korpus = new Wikicorpus(conf);
@@ -352,8 +421,9 @@ private void getCategoryParentChild(int id){
     	
     	//korpus.deskriptor();
     	
-    	korpus.getArticleByCategory();
+    	//korpus.getArticleByCategory();
     	
+    	korpus.getDescFromArticle();
     	/*
     	 * membuat corpus dari seluruh artikel wikipedia
     	 */

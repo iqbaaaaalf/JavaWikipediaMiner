@@ -104,26 +104,21 @@ public class Cleaner {
 		String markupDirt = isi.getMarkup();
 		String markupClean = "";
 		
-		markupClean = markupDirt.replaceAll("={2,}(.+)={2,}", "\n") ; //clear section headings completely - not just formating, but content as well.			
+		markupClean = markupDirt.replaceAll("={3,}(.+)={3,}", "$1") ;
+		markupClean = markupClean.replaceAll("={2,}(.+)={2,}", "$1");
+		markupClean = markupClean.replaceAll("( Lihat pula \n)(.*\n)+", "");
+		markupClean = markupClean.replaceAll("(Referensi\n)(.*\n)+", "");
+		markupClean = markupClean.replaceAll("( Lihat juga \n)(.*\n)+", "");
 		markupClean = stripper.stripAllButInternalLinksAndEmphasis(markupClean, null) ;
 		markupClean = stripper.stripNonArticleInternalLinks(markupClean, null) ;
 		markupClean = stripper.stripExcessNewlines(markupClean) ;
+		markupClean = stripper.stripInternalLinks(markupClean, null);
+		markupClean = markupClean.replaceAll("''", "");
+		markupClean = markupClean.replaceAll("&nbsp;", " ");
+		
 
 		String fp = "" ;
-		int pos = markupClean.indexOf("\n\n") ;
-
-		while (pos>=0) {
-			fp = markupClean.substring(0, pos) ;
-
-			if (pos > 100000) 
-				break ;
-
-			pos = markupClean.indexOf("\n\n", pos+2) ;
-		}
-
-		fp = fp.replaceAll("\n", " ") ;
-		fp = fp.replaceAll("\\s+", " ") ;  //turn all whitespace into spaces, and collapse them.
-		fp = fp.trim();
+		fp = markupClean;
 		
 		
 		return fp;
@@ -131,7 +126,7 @@ public class Cleaner {
 	
 
 	public Boolean isKategori(String kategori, String query){
-		Pattern p = Pattern.compile("(?! )("+query+")(?: )", Pattern.CASE_INSENSITIVE);
+		Pattern p = Pattern.compile("(?! )("+query+")(?: )|(?! )("+query+")|("+query+")(?: )", Pattern.CASE_INSENSITIVE);
 		Matcher m = p.matcher(kategori);
 		
 		if (m.find()){
