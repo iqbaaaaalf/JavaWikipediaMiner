@@ -53,9 +53,13 @@ public class Cleaner {
 		String markupDirt = isi.getMarkup();
 		String charsToRemove = "*!:|";
 		String CharsToRemove1 = "'" ; 
-		Pattern p = Pattern.compile("(Infobox.*\n(?:|.*\n)+)}}");
-		Matcher m = p.matcher(markupDirt);
+		Pattern p = Pattern.compile("\\{\\{\\w.+\n(\\|(.*\n)+)\\}\\}?");
+		//Pattern p = Pattern.compile("\\{\\{\\w.+\n((\\|.*\n)+)\\}\\}?");
 		String markupClean = null;
+		
+		try{
+		Matcher m = p.matcher(markupDirt);
+		markupClean = markupDirt.replaceAll("\\{\\{cite.*\n(\\|(.*\n)*)\\}\\}", null);
 		if (m.find())
 		{
 			markupClean = m.group(1);
@@ -87,11 +91,15 @@ public class Cleaner {
 			//menghilangkan tanda &nbsp hasil ekstraksi suatu simbol
 			markupClean = markupClean.replaceAll("&nbsp;", " ");
 			markupClean = markupClean.replaceAll("\\?(\\d)", "-$2");
+			markupClean = markupClean.replaceAll("\\{\\{|\\}\\}", "");
 			
 			
 		}
 		else
 			markupClean = "";
+		}catch (NullPointerException e){
+			System.err.println("File tidak mempunyai markup pada dataabse");
+		}
 		
 //		markupClean = CharMatcher.anyOf(charsToRemove).replaceFrom(markupClean, " ");
 //		markupClean = markupClean.replaceAll("[\\[\\]\\{\\}]", "");
@@ -107,16 +115,20 @@ public class Cleaner {
 		markupClean = markupDirt.replaceAll("={3,}(.+)={3,}", "$1") ;
 		markupClean = markupClean.replaceAll("={2,}(.+)={2,}", "$1");
 		markupClean = markupClean.replaceAll("( Lihat pula \n)(.*\n)+", "");
+		markupClean = markupClean.replaceAll("( Artikel terkait \n)(.*\n)+", "");
 		markupClean = markupClean.replaceAll("(Referensi\n)(.*\n)+", "");
 		markupClean = markupClean.replaceAll("( Lihat juga \n)(.*\n)+", "");
+		markupClean = markupClean.replaceAll("( Pranala luar \n)(.*\n)+", "");
 		markupClean = stripper.stripAllButInternalLinksAndEmphasis(markupClean, null) ;
 		markupClean = stripper.stripNonArticleInternalLinks(markupClean, null) ;
-		markupClean = stripper.stripExcessNewlines(markupClean) ;
 		markupClean = stripper.stripInternalLinks(markupClean, null);
+		markupClean = stripper.stripExcessNewlines(markupClean) ;
 		markupClean = markupClean.replaceAll("''", "");
 		markupClean = markupClean.replaceAll("&nbsp;", " ");
 		
-
+//		regions = gatherTemplates(clearedMarkup) ;
+//		clearedMarkup = stripRegions(clearedMarkup, regions, replacement) ;
+		
 		String fp = "" ;
 		fp = markupClean;
 		

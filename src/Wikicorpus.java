@@ -360,6 +360,7 @@ public void getCategoryParentChild(int id){
 		String termKategori;
 		Page penampung;
 		List<String> kategoriTerkait = new ArrayList<String>(); 
+		int counter = 0;
 		
 		while((termKategori = getString("Silakan masukan kategori yang anda mau cari")) != null){
 			int k = 0;
@@ -385,22 +386,55 @@ public void getCategoryParentChild(int id){
 					String hasil = "";
 					
 					/*
-					 * untuk handle jika suatu kategori memeiliki child
+					 * to handle if soe
 					 */
 					if (listChild.length != 0){
 						for (int l=0 ; l<listChild.length ; l++) {
-							kategoriTerkait.addAll((Collection<? extends String>) listChild[l]);
+							kategoriTerkait.add(listChild[l].getTitle());
 						}
 					}
 					
 					for (int j=0 ; j<listArtikel.length ; j++) { 
 						System.out.println("	- Artikel '" +  listArtikel[j].getTitle() + "' - ekstraksi dimulai");
-						hasil = c.getDesc(listArtikel[j]);
-			
-						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/"+ listArtikel[j].getId() + ".doc.txt"));
-						out.write(hasil);
-						out.newLine();
-						out.close();
+						hasil = c.getBox(listArtikel[j]);
+						
+						//MENGAMBIL KONTEN ARTIKEL//
+						
+//						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/test/"+ listArtikel[j].getId() + ".doc.txt"));
+//						out.write(hasil);
+//						out.newLine();
+//						out.close();
+						
+						//------------------------//
+						
+						//MENGAMBIL BOX ARTIKEL   //
+						
+						if(hasil != ""){
+							try{	
+							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/"+ listArtikel[j].getId() + ".box.txt"));
+							out.write(hasil);
+							out.newLine();
+							out.close();
+							}catch(NullPointerException e){
+								System.err.println(listArtikel[j].getTitle() + " dan " +listArtikel[j].getId()+ " Tidak mempunyai markup");
+							}
+						}else{
+							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/nobox/NoBox.txt", true));
+							out.append(String.format("%-15s %-15s %-15s %-15s %n", counter, kategoriTerkait.get(i), listArtikel[j].getId() , listArtikel[j].getTitle()));
+							out.newLine();
+							out.close();
+						}
+						
+						//-------------------------//
+						
+						//MENGAMBIL LIST ARTIKEL//
+//						counter++ ;
+//						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/test/listArtikel.txt", true));
+//						out.append(String.format("%-15s %-15s %-15s %-15s %n", counter, kategoriTerkait.get(i), listArtikel[j].getId() , listArtikel[j].getTitle()));
+//						out.newLine();
+//						out.close();
+						
+						//-------------------------//
 						
 						System.out.println("	-Artikel dengan id " +listArtikel[j].getTitle()+ " telah di diextract boxnya");
 			           }
