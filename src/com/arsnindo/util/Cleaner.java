@@ -1,3 +1,4 @@
+package com.arsnindo.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,6 +113,7 @@ public class Cleaner {
 		String markupDirt = isi.getMarkup();
 		String markupClean = "";
 		
+		try{
 		markupClean = markupDirt.replaceAll("={3,}(.+)={3,}", "$1") ;
 		markupClean = markupClean.replaceAll("={2,}(.+)={2,}", "$1");
 		markupClean = markupClean.replaceAll("( Lihat pula \n)(.*\n)+", "");
@@ -125,7 +127,11 @@ public class Cleaner {
 		markupClean = stripper.stripExcessNewlines(markupClean) ;
 		markupClean = markupClean.replaceAll("''", "");
 		markupClean = markupClean.replaceAll("&nbsp;", " ");
-		
+		}catch (NullPointerException e){
+			System.err.println("File tidak mempunyai markup pada dataabse");
+		}catch(StringIndexOutOfBoundsException se){
+			System.err.println("Proses Cleaner bermasalah, file akan di skip");
+		}
 //		regions = gatherTemplates(clearedMarkup) ;
 //		clearedMarkup = stripRegions(clearedMarkup, regions, replacement) ;
 		

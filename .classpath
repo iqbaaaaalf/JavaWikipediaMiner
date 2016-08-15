@@ -20,5 +20,6 @@
 	<classpathentry kind="lib" path="T:/PKL/source/wikipedia-miner-1.2.0/lib/weka-wrapper-1.0.jar"/>
 	<classpathentry kind="lib" path="T:/PKL/source/wikipedia-miner-1.2.0/lib/xercesImpl.jar"/>
 	<classpathentry kind="lib" path="T:/PKL/source/wm-master/target/WikipediaMiner-0.0.1-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="T:/PKL/source/jdbc/mysql-connector-java-5.1.39/mysql-connector-java-5.1.39-bin.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

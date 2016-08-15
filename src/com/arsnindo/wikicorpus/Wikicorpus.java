@@ -1,3 +1,5 @@
+package com.arsnindo.wikicorpus;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,6 +16,9 @@ import org.wikipedia.miner.model.Wikipedia;
 import org.wikipedia.miner.model.Page.PageType;
 import org.wikipedia.miner.util.WikipediaConfiguration;
 
+import com.arsnindo.util.Cleaner;
+import com.arsnindo.util.Connect;
+
 
 
 public class Wikicorpus {
@@ -22,6 +27,8 @@ public class Wikicorpus {
 		BufferedWriter out;
 		BufferedReader _input;
 		Cleaner c = new Cleaner();
+		Connect connect = new Connect();
+		
 		
 public Wikicorpus(WikipediaConfiguration conf){ 
 		// memuat configurasi wiki, untuk akses ke database barkeley
@@ -248,6 +255,103 @@ private String getString(String prompt) throws IOException{
 	return line;
 }
 
+/*
+ * delay 
+ * @param n time in miliseconds
+ */
+
+private void delay(long n){
+	try{
+	Thread.sleep(n);
+	}catch (InterruptedException e){
+		
+	}
+}
+
+// get category without matching query
+
+private String ambilKategoriWOQuery(String p) throws IOException{
+	Page kategori = _wikipedia.getCategoryByTitle(p);
+	String judul = null;
+	String hasil = null;
+	
+	
+	if(kategori != null){
+		judul = kategori.getTitle();
+		hasil = judul;
+		}
+	else
+		hasil = null;
+	
+	return hasil;
+}
+
+/*
+ * insert all (only-content), (only-box), (only-category) to DATABASE
+ */
+
+public void inputToDatabase(){
+	_input = new BufferedReader(new InputStreamReader(System.in));
+	Page p;
+	List<String> kategoriTerkait = new ArrayList<String>();
+	connect.connect();
+	
+
+		int k = 0;
+		Iterator<Page> iter = _wikipedia.getPageIterator(PageType.category);
+		System.out.println("\nMohon tunggu~\n");
+			for (k=0; k<66889; k++){
+				Page p1 = iter.next();
+				p=p1;
+				try{
+				String isi = ambilKategoriWOQuery(p.getTitle());
+					if (isi != null){
+					kategoriTerkait.add(isi);
+					if(k == 66889)
+						((BufferedReader) iter).close();
+				}
+				}catch(IOException e){
+					System.err.println("Terjadi masalah ketika loop kategory");
+					
+				}
+			}
+			
+
+			for (int i=0 ; i<kategoriTerkait.size() ; i++) {
+				System.out.println("** Kategori '" +  kategoriTerkait.get(i) + "' - eksraksi dimulai");
+				
+				Category kategori = _wikipedia.getCategoryByTitle(kategoriTerkait.get(i));
+				Category[] listChild = kategori.getChildCategories();
+				Article[] listArtikel = kategori.getChildArticles();
+				String hasil = "";
+				
+				/*
+				 * to handle if some category have child category
+				 */
+				if (listChild.length != 0){
+					for (int l=0 ; l<listChild.length ; l++) {
+						kategoriTerkait.add(listChild[l].getTitle());
+					}
+				}
+				
+				for (int j=0 ; j<listArtikel.length ; j++) { 
+					System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
+					hasil = c.getDesc(listArtikel[j]);
+					
+					//MENGAMBIL KONTEN ARTIKEL//
+					
+					connect.createDoc(listArtikel[j].getId(), listArtikel[j].getTitle(), hasil);
+					connect.createCat(kategoriTerkait.get(i), listArtikel[j].getId());
+					
+		           }
+				System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - ekstraksi selesai");
+				delay(500);
+			}
+			
+			kategoriTerkait.clear();
+	}
+
+
 public void getArticleByCategory() throws Exception{
 	_input = new BufferedReader(new InputStreamReader(System.in));
 	Page p;
@@ -396,34 +500,35 @@ public void getCategoryParentChild(int id){
 					
 					for (int j=0 ; j<listArtikel.length ; j++) { 
 						System.out.println("	- Artikel '" +  listArtikel[j].getTitle() + "' - ekstraksi dimulai");
-						hasil = c.getBox(listArtikel[j]);
+						hasil = c.getDesc(listArtikel[j]);
 						
 						//MENGAMBIL KONTEN ARTIKEL//
 						
-//						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/test/"+ listArtikel[j].getId() + ".doc.txt"));
-//						out.write(hasil);
-//						out.newLine();
-//						out.close();
+						out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/doc/"+ listArtikel[j].getId() + ".doc.txt"));
+						out.write(hasil);
+						out.newLine();
+						out.close();
 						
 						//------------------------//
 						
 						//MENGAMBIL BOX ARTIKEL   //
 						
-						if(hasil != ""){
-							try{	
-							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/"+ listArtikel[j].getId() + ".box.txt"));
-							out.write(hasil);
-							out.newLine();
-							out.close();
-							}catch(NullPointerException e){
-								System.err.println(listArtikel[j].getTitle() + " dan " +listArtikel[j].getId()+ " Tidak mempunyai markup");
-							}
-						}else{
-							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/nobox/NoBox.txt", true));
-							out.append(String.format("%-15s %-15s %-15s %-15s %n", counter, kategoriTerkait.get(i), listArtikel[j].getId() , listArtikel[j].getTitle()));
-							out.newLine();
-							out.close();
-						}
+//						hasil = c.getBox(listArtikel[j]);
+//						if(hasil != ""){
+//							try{	
+//							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/"+ listArtikel[j].getId() + ".box.txt"));
+//							out.write(hasil);
+//							out.newLine();
+//							out.close();
+//							}catch(NullPointerException e){
+//								System.err.println(listArtikel[j].getTitle() + " dan " +listArtikel[j].getId()+ " Tidak mempunyai markup");
+//							}
+//						}else{
+//							out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/dalam tahun 2015/box/nobox/NoBox.txt", true));
+//							out.append(String.format("%-15s %-15s %-15s %-15s %n", counter, kategoriTerkait.get(i), listArtikel[j].getId() , listArtikel[j].getTitle()));
+//							out.newLine();
+//							out.close();
+//						}
 						
 						//-------------------------//
 						
@@ -457,7 +562,9 @@ public void getCategoryParentChild(int id){
     	
     	//korpus.getArticleByCategory();
     	
-    	korpus.getDescFromArticle();
+    	korpus.inputToDatabase();
+    	
+    	//korpus.getDescFromArticle();
     	/*
     	 * membuat corpus dari seluruh artikel wikipedia
     	 */
