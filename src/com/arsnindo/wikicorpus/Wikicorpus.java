@@ -3,11 +3,14 @@ package com.arsnindo.wikicorpus;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.* ;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.wikipedia.miner.model.Article;
 import org.wikipedia.miner.model.Category;
@@ -18,6 +21,7 @@ import org.wikipedia.miner.util.WikipediaConfiguration;
 
 import com.arsnindo.util.Cleaner;
 import com.arsnindo.util.Connect;
+import com.arsnindo.util.tempBox;
 
 
 
@@ -290,11 +294,14 @@ private String ambilKategoriWOQuery(String p) throws IOException{
  * insert all (only-content), (only-box), (only-category) to DATABASE
  */
 
-public void inputToDatabase(){
+public void inputToDatabase(String startCat, String endCat){
 	_input = new BufferedReader(new InputStreamReader(System.in));
 	Page p;
 	List<String> kategoriTerkait = new ArrayList<String>();
+	List<String> childTerkait = new ArrayList<String>();
+	List<tempBox> label = null ;
 	connect.connect();
+	int contact = 0;
 	
 
 		int k = 0;
@@ -305,11 +312,29 @@ public void inputToDatabase(){
 				p=p1;
 				try{
 				String isi = ambilKategoriWOQuery(p.getTitle());
-					if (isi != null){
-					kategoriTerkait.add(isi);
-					if(k == 66889)
-						((BufferedReader) iter).close();
+				/*
+				 * to resume when iterator find Tokoh Wales
+				 * un-comment an change contact value to 0 before use this
+				 */
+				if (isi.equals(startCat)){
+					contact = 1;
 				}
+				
+				/*
+				 * end point
+				 */
+				if (isi.equals(endCat)){
+					contact = 0;
+				}
+				
+				if(contact == 1){
+					if (isi != null){
+						kategoriTerkait.add(isi);
+						if(k == 66889)
+							((BufferedReader) iter).close();
+					}
+				}
+				
 				}catch(IOException e){
 					System.err.println("Terjadi masalah ketika loop kategory");
 					
@@ -330,26 +355,184 @@ public void inputToDatabase(){
 				 */
 				if (listChild.length != 0){
 					for (int l=0 ; l<listChild.length ; l++) {
-						kategoriTerkait.add(listChild[l].getTitle());
+						childTerkait.add(listChild[l].getTitle());
 					}
 				}
 				
-				for (int j=0 ; j<listArtikel.length ; j++) { 
-					System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
-					hasil = c.getDesc(listArtikel[j]);
-					
-					//MENGAMBIL KONTEN ARTIKEL//
-					
-					connect.createDoc(listArtikel[j].getId(), listArtikel[j].getTitle(), hasil);
-					connect.createCat(kategoriTerkait.get(i), listArtikel[j].getId());
-					
-		           }
-				System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - ekstraksi selesai");
-				delay(500);
+//				for (int j=0 ; j<listArtikel.length ; j++) { 
+//					System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
+//					
+//					// try BATCH MODE DOC-CAT
+//					
+////					try{
+////						hasil = c.getDesc(listArtikel[j]);
+////						}catch(StackOverflowError SO){
+////							System.err.println(SO);
+////						}
+////					
+////					connect.docBatch(listArtikel[j].getId(), listArtikel[j].getTitle(), hasil);
+////					connect.catBatch(kategoriTerkait.get(i), listArtikel[j].getId());
+//					
+//					/////////////////////////////////
+//					
+//					// try BATCH MODE BOX 
+////					try{
+////						label = c.getBox2(listArtikel[j]);
+////						}catch(StackOverflowError SO){
+////							System.err.println(SO);
+////						}
+////						
+////						
+////					try{
+////						if(label.size() == 0){
+////							System.err.println("Artikel dengan id " + listArtikel[j].getId() + "tidak mempunyai box" );
+////						}else{
+////							for (int a = 0; a < label.size(); a++){
+////								
+////								for( int b=0; b < label.get(a).getLabel().size(); b++){
+////									
+////								connect.boxBatch(listArtikel[j].getId(), label.get(a).getLabel().get(b), label.get(a).getValue().get(b), label.get(a).getType(), label.get(a).getKategori());
+////									
+////								}
+////								
+////							}
+////							
+////							
+////						}
+////						
+////			           }catch(StackOverflowError e){
+////			        	   System.err.println(e);
+////			           }
+//					
+//					////////////////////////////////
+//						
+//					// get document and category file
+////					try{
+////					hasil = c.getDesc(listArtikel[j]);
+////					}catch(StackOverflowError SO){
+////						System.err.println(SO);
+////					}
+////					
+////					connect.createDoc(listArtikel[j].getId(), listArtikel[j].getTitle(), hasil);
+////					connect.createCat(kategoriTerkait.get(i), listArtikel[j].getId());
+//					
+//					/////////////////////////////////
+//					
+//					// get every label on every infobox with it's value 
+////					try{
+////					label = c.getBox2(listArtikel[j]);
+////					}catch(StackOverflowError SO){
+////						System.err.println(SO);
+////					}
+////					
+////					
+////					try{
+////					if(label.size() == 0){
+////						System.err.println("Artikel dengan id " + listArtikel[j].getId() + "tidak mempunyai box" );
+////					}else{
+////						for (int a = 0; a < label.size(); a++){
+////							
+////							for( int b=0; b < label.get(a).getLabel().size(); b++){
+////								
+////							connect.createBox(listArtikel[j].getId(), label.get(a).getLabel().get(b), label.get(a).getValue().get(b), label.get(a).getType(), label.get(a).getKategori());
+////								
+////							}
+////							
+////						}
+////						
+////						
+////					}
+////					
+////					
+////					
+////		           }catch(StackOverflowError e){
+////		        	   System.err.println(e);
+////		           }
+//					///////////////////////////////////////////
+//					
+//				delay(10);
+//					
+//				}
+				
+//				System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - ekstraksi selesai");
+			
 			}
 			
+			/*
+			 * only do for child category
+			 */
+			
+			for (int i=0 ; i<childTerkait.size() ; i++) {
+				System.out.println("** Kategori '" +  childTerkait.get(i) + "' - eksraksi dimulai");
+				
+				Category kategori = _wikipedia.getCategoryByTitle(childTerkait.get(i));
+				Article[] listArtikel = kategori.getChildArticles();
+				String hasil = "";
+				
+				for (int j=0 ; j<listArtikel.length ; j++) { 
+					System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
+					
+					// try BATCH MODE DOC-CAT
+					
+					try{
+						hasil = c.getDesc(listArtikel[j]);
+						}catch(StackOverflowError SO){
+							System.err.println(SO);
+						}
+					
+					connect.docBatch(listArtikel[j].getId(), listArtikel[j].getTitle(), hasil);
+					connect.catBatch(childTerkait.get(i), listArtikel[j].getId());
+					
+					/////////////////////////////////
+					
+					// try BATCH MODE BOX 
+					try{
+						label = c.getBox2(listArtikel[j]);
+						}catch(StackOverflowError SO){
+							System.err.println(SO);
+						}
+						
+						
+					try{
+						if(label.size() == 0){
+							System.err.println("Artikel dengan id " + listArtikel[j].getId() + "tidak mempunyai box" );
+						}else{
+							for (int a = 0; a < label.size(); a++){
+								
+								for( int b=0; b < label.get(a).getLabel().size(); b++){
+									
+								connect.boxBatch(listArtikel[j].getId(), label.get(a).getLabel().get(b), label.get(a).getValue().get(b), label.get(a).getType(), label.get(a).getKategori());
+									
+								}
+								
+							}
+							
+							
+						}
+						
+			           }catch(StackOverflowError e){
+			        	   System.err.println(e);
+			           }
+					
+					////////////////////////////////
+					
+				delay(10);
+					
+				}
+				
+				System.out.println("* Kategori '" +  childTerkait.get(i) + "' - ekstraksi selesai");
+			
+			}
+			
+			//  EXE BATCH STATEMENT
+			connect.exeDocBatch();
+			connect.exeCatBatch();
+			connect.exeBoxBatch();
+			/////////////////////
+			System.out.println("jumlah child kategory yang di ekstrak adalah "+ childTerkait.size());
 			kategoriTerkait.clear();
-	}
+			childTerkait.clear();
+}
 
 
 public void getArticleByCategory() throws Exception{
@@ -550,6 +733,426 @@ public void getCategoryParentChild(int id){
 		}
 	}
 	
+	//0 for location, 1 for person, and 2 for organization
+	private String ambilTextAnnot(String ask, String desc, int statusAnnot) throws IOException{
+		String query = ask;
+		String hasil = null;
+		Cleaner c = new Cleaner();
+		
+		if(desc != null){
+			if(c.readyAnnotate(query, desc)){
+				
+				switch(statusAnnot){
+				case 0:
+					hasil = c.setAnnotate(query, desc);
+					break;
+				case 1:
+					hasil = c.setAnnotatePersOrganCountry(query, desc);
+					break;
+				case 2:
+					hasil = c.setAnnotatePersOrganCountry(query, desc);
+					break;
+				}
+			}
+		}
+		
+		return hasil;
+	}
+	
+	public void setAnnotate(String s) throws Exception{
+		_input = new BufferedReader(new InputStreamReader(System.in));
+		Page p;
+		List<String> kategoriTerkait = new ArrayList<String>();
+		List<String> childTerkait = new ArrayList<String>();
+		List<tempBox> label = null ;
+		connect.connect();
+		String termKategori = s;
+		 
+		
+		
+			int k = 0;
+			Iterator<Page> iter = _wikipedia.getPageIterator(PageType.category);
+			System.out.println("\nMohon tunggu~\n");
+				for (k=0; k<66889; k++){
+					Page p1 = iter.next();
+					p=p1;
+					String isi = ambilKategori(termKategori, p.getTitle(), p.getId());
+					if (isi != null){
+					kategoriTerkait.add(isi);
+					if(k == 66889)
+						((BufferedReader) iter).close();
+					}
+				}
+				
+				for (int i=0 ; i<kategoriTerkait.size() ; i++) {
+					System.out.println("** Kategori '" +  kategoriTerkait.get(i) + "' - eksraksi dimulai");
+					
+					Category kategori = _wikipedia.getCategoryByTitle(kategoriTerkait.get(i));
+					Category[] listChild = kategori.getChildCategories();
+					Article[] listArtikel = kategori.getChildArticles();
+					String hasil = "";
+					
+					/*
+					 * to handle if some category have child category
+					 */
+					if (listChild.length != 0){
+						for (int l=0 ; l<listChild.length ; l++) {
+							childTerkait.add(listChild[l].getTitle());
+						}
+					}
+
+					try{
+					for (int j=0 ; j<listArtikel.length ; j++) { 
+						System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
+						
+						
+						Article[] setLinkOutArtikel = listArtikel[j].getLinksOut();
+						
+						String penampung = null;
+				        List<tempBox> labelOut = null;
+				        String akhir = c.getDesc(listArtikel[j]);
+				        
+				        label = c.getBox2(listArtikel[j]);
+				        
+				        // section below is to determine what type an article itself by label in it's box
+				        for (int b = 0; b<label.size(); b++){
+	 	            		 //System.out.print(labelOut.size()+"\n");
+				        	for (int a = 0; a<label.get(b).getLabel().size(); a++){
+				        		if (label.get(b).getLabel().get(a).equals("location")){
+				        			if(!label.get(b).getValue().get(a).isEmpty()){
+				        				penampung = ambilTextAnnot(label.get(b).getValue().get(a), akhir, 0);
+				        				if(penampung != null)
+		 	                        		 akhir = penampung;	
+				        			} 
+	 	                        	// System.out.print(listArtikel[j].getTitle()+ " memiliki label yang dicari\n");
+				        		}else if (label.get(b).getLabel().get(a).equals("birth_date")||label.get(b).getLabel().get(a).equals("birthdate")||label.get(b).getLabel().get(a).equals("occupation")||label.get(b).getLabel().get(a).equals("religion")){
+				        			penampung = ambilTextAnnot(listArtikel[j].getTitle(), akhir, 1);
+				        			if(penampung != null)
+	 	                        		 akhir = penampung;	
+				        		}else if(label.get(b).getLabel().get(a).equals("founded")||label.get(b).getLabel().get(a).equals("foundation")){
+				        			penampung = ambilTextAnnot(listArtikel[j].getTitle(), akhir, 2);
+				        			if(penampung != null)
+	 	                        		 akhir = penampung;	
+				        			
+				        		}
+				        	}
+	 	            	 }
+				        
+				        // check for certain label in linkOut article's box
+				        
+				        if (setLinkOutArtikel.length == 0) {
+				       	   System.out.println("\n!! Kategori "+kategoriTerkait.get(i)+" tidak mempunyai link out artikel !!");
+				          } else {
+				       	   //System.out.println("=== link out ditemukan dan sedang di proses anotasi train nya : ===");
+				              for (int m=0 ; m<setLinkOutArtikel.length ; m++) { 
+				             	 //System.out.println(" - [" + (m+1) + "] " + setLinkOutArtikel[m].getTitle()+ "\n") ;
+				             	 
+				            	// check if it's person or not
+	
+					             	 
+			             	 // check if in article box have certain label for determined if it's person or not
+			             	 /// start from article it self. as for now we only search for label (birth_date, birthdate, occupation, religion)
+			             		if(c.isPerson(setLinkOutArtikel[m])){
+				             		 
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 2);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+			             		}
+			             		
+			             		// check if it's organization or not
+			             		/// start from article it self. as for now we only search for label (founded, foundation, industry)
+			             		if(c.isOrganization(setLinkOutArtikel[m])){
+				             		 
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 2);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+			             		}
+
+				             	 // check if it's country or not
+				             	 if(c.isCountry(setLinkOutArtikel[m])){
+				             		 
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 2);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+				             		 	//System.out.println(setLinkOutArtikel[m].getTitle()+ " merupakan negara\n"); 
+				                	 
+				                 //else linkOut wasn't a country, then check for it's header article and infobox. is there any certain label
+				                 	 
+				             	 }else if(c.containHeaderAnnot(setLinkOutArtikel[m])){
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+				             		 	//System.out.println(setLinkOutArtikel[m].getTitle()+ " terdapat header yang dicari\n");
+				             		 	
+				             	 }else{
+				             	 
+				 	            	 labelOut = c.getBox2(setLinkOutArtikel[m]);
+				 	            	 
+				 	            	 for (int x = 0; x<labelOut.size(); x++){
+				 	            		 //System.out.print(labelOut.size()+"\n");
+				 	            		 	            		 
+				 	            			 if (labelOut.get(x).getLabel().contains("location")||labelOut.get(x).getLabel().contains("capital")||labelOut.get(x).getLabel().contains("penduduk")||labelOut.get(x).getLabel().contains("region")||labelOut.get(x).getLabel().contains("luas")||labelOut.get(x).getLabel().contains("peta")){
+				 	            				 
+				 	            				 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				 	                        	 if(penampung != null)
+				 	                        		 akhir = penampung;		 
+				 	                        	 //System.out.print(setLinkOutArtikel[m].getTitle()+ " memiliki label yang dicari\n");
+				 	            			 }
+				 	            			 
+				 	            		 for (int c = 0; k<labelOut.get(x).getLabel().size(); c++){ 
+				 	            			 
+				 	            			 Pattern a = Pattern.compile("population_[a-z]+|population");
+				 	            			 Pattern b = Pattern.compile("area_[a-z]+|area");
+				 	            		     Matcher o = a.matcher(labelOut.get(j).getLabel().get(c));
+				 	            		     Matcher n = b.matcher(labelOut.get(j).getLabel().get(c));
+				 	            		     
+				 	            		     if(o.find()||n.find()){
+				 	            		    	 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				 	                        	 if(penampung != null)
+				 	                        		 akhir = penampung;		 
+				 	                        	 //System.out.print(setLinkOutArtikel[m].getTitle()+ " memiliki label yang dicari\n");
+				 	            		     }
+				 	            		     
+				 	            			 
+				 	            		 }
+				 		 
+				 	            	 }
+				             	 }
+				             	  
+				             	 
+				              }
+				              
+				          }
+				        
+				         akhir = c.lastCleanAnnot(akhir); 
+				        
+				         String[] sentence = akhir.split("(?<=[.!?])\\s* ");
+				         Pattern r = Pattern.compile("<START:entity>");
+				         
+				         for (String z : sentence) {
+				         	Matcher v = r.matcher(z);
+				         	
+				         	if(v.find()){
+				         		try{
+				         		out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/annotasi/labelFix/FULL.txt", true));
+				         		out.append(z+"\n");
+				         		out.close();
+				         		}catch(IOException ie){
+				         			
+				         		}
+				         	}
+				         }
+
+				         
+					delay(10);
+						
+					}
+					}catch(StackOverflowError soe){
+						System.err.println(soe);
+					}
+					
+					System.out.println("* Kategori '" +  kategoriTerkait.get(i) + "' - ekstraksi selesai");
+				
+				}
+				
+				// for child article from child category
+				
+				for (int i=0 ; i<childTerkait.size() ; i++) {
+					System.out.println("** Kategori '" +  childTerkait.get(i) + "' - eksraksi dimulai");
+					
+					Category kategori = _wikipedia.getCategoryByTitle(childTerkait.get(i));
+					Category[] listChild = kategori.getChildCategories();
+					Article[] listArtikel = kategori.getChildArticles();
+					String hasil = "";
+
+					try{
+					for (int j=0 ; j<listArtikel.length ; j++) { 
+						System.out.println("	- "+listArtikel[j].getId()+"- Artikel '" +  listArtikel[j].getTitle() + "' - DIEKSTRAK");
+						
+						
+						Article[] setLinkOutArtikel = listArtikel[j].getLinksOut();
+						
+						String penampung = null;
+				        List<tempBox> labelOut = null;
+				        String akhir = c.getDesc(listArtikel[j]);
+				        
+				        label = c.getBox2(listArtikel[j]);
+				        
+				        for (int b = 0; b<label.size(); b++){
+	 	            		 //System.out.print(labelOut.size()+"\n");
+				        	for (int a = 0; a<label.get(b).getLabel().size(); a++){
+				        		if (label.get(b).getLabel().get(a).equals("location")){
+				        			if(!label.get(b).getValue().get(a).isEmpty()){
+				        				penampung = ambilTextAnnot(label.get(b).getValue().get(a), akhir, 0);
+				        			}
+	 	                        	 if(penampung != null)
+	 	                        		 akhir = penampung;		 
+	 	                        	// System.out.print(listArtikel[j].getTitle()+ " memiliki label yang dicari\n");
+				        		}else if (label.get(b).getLabel().get(a).equals("birth_date")||label.get(b).getLabel().get(a).equals("birthdate")||label.get(b).getLabel().get(a).equals("occupation")||label.get(b).getLabel().get(a).equals("religion")){
+				        			penampung = ambilTextAnnot(listArtikel[j].getTitle(), akhir, 1);
+				        			if(penampung != null)
+	 	                        		 akhir = penampung;	
+				        		}else if(label.get(b).getLabel().get(a).equals("founded")||label.get(b).getLabel().get(a).equals("foundation")){
+				        			penampung = ambilTextAnnot(listArtikel[j].getTitle(), akhir, 2);
+				        			if(penampung != null)
+	 	                        		 akhir = penampung;	
+				        			
+				        		}		
+				        	}
+	 	            	 }
+				        
+				        if (setLinkOutArtikel.length == 0) {
+				       	   System.out.println("\n!! Kategori "+childTerkait.get(i)+" tidak mempunyai link out artikel !!");
+				          } else {
+				       	   //System.out.println("=== link out ditemukan dan sedang di proses anotasi train nya : ===");
+				              for (int m=0 ; m<setLinkOutArtikel.length ; m++) { 
+				             	 //System.out.println(" - [" + (m+1) + "] " + setLinkOutArtikel[m].getTitle()+ "\n") ;
+				             	 
+				            	// check if in article box have certain label for determined if it's person or not
+					             	 /// start from article it self. as for now we only search for label (birth_date, birthdate, occupation, religion)
+					             		if(c.isPerson(setLinkOutArtikel[m])){
+						             		 
+						             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 1);
+						             		 if(penampung != null)
+						             			akhir = penampung;
+					             		}
+					             		
+					             		// check if it's organization or not
+					             		/// start from article it self. as for now we only search for label (founded, foundation, industry)
+					             		if(c.isOrganization(setLinkOutArtikel[m])){
+						             		 
+						             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 2);
+						             		 if(penampung != null)
+						             			akhir = penampung;
+					             		}
+				            	  
+				             	 // check apakah link out tersebut adalah negara atau bukan
+				             	 if(c.isCountry(setLinkOutArtikel[m])){
+				             		 
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+				             		 	//System.out.println(setLinkOutArtikel[m].getTitle()+ " merupakan negara\n");
+				                 		 
+				                 //else linkOut wasn't a country, then check for it's infobox. if there any label named  location
+				                 	 
+				             	 }else if(c.containHeaderAnnot(setLinkOutArtikel[m])){
+				             		 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				             		 if(penampung != null)
+				             			akhir = penampung;
+				             		 	//System.out.println(setLinkOutArtikel[m].getTitle()+ " terdapat header yang dicari\n");
+				             		 	
+				             	 }else{
+				             	 
+				 	            	 labelOut = c.getBox2(setLinkOutArtikel[m]);
+				 	            	 
+				 	            	 for (int x = 0; x<labelOut.size(); x++){
+				 	            		 //System.out.print(labelOut.size()+"\n");
+				 	            		 	            		 
+				 	            			 if (labelOut.get(x).getLabel().contains("location")||labelOut.get(x).getLabel().contains("capital")||labelOut.get(x).getLabel().contains("penduduk")||labelOut.get(x).getLabel().contains("region")||labelOut.get(x).getLabel().contains("luas")||labelOut.get(x).getLabel().contains("peta")){
+				 	            				 
+				 	            				 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				 	                        	 if(penampung != null)
+				 	                        		 akhir = penampung;		 
+				 	                        	 //System.out.print(setLinkOutArtikel[m].getTitle()+ " memiliki label yang dicari\n");
+				 	            			 }
+				 	            			 
+				 	            		 for (int c = 0; k<labelOut.get(x).getLabel().size(); c++){ 
+				 	            			 
+				 	            			 Pattern a = Pattern.compile("population_[a-z]+|population");
+				 	            			 Pattern b = Pattern.compile("area_[a-z]+|area");
+				 	            		     Matcher o = a.matcher(labelOut.get(j).getLabel().get(c));
+				 	            		     Matcher n = b.matcher(labelOut.get(j).getLabel().get(c));
+				 	            		     
+				 	            		     if(o.find()||n.find()){
+				 	            		    	 penampung = ambilTextAnnot(setLinkOutArtikel[m].getTitle(), akhir, 0);
+				 	                        	 if(penampung != null)
+				 	                        		 akhir = penampung;		 
+				 	                        	 //System.out.print(setLinkOutArtikel[m].getTitle()+ " memiliki label yang dicari\n");
+				 	            		     }
+				 	            		     
+				 	            			 
+				 	            		 }
+				 		 
+				 	            	 }
+				             	 }
+				             	 
+				             	 
+				              }
+				              
+				          }
+				         
+				         akhir = c.lastCleanAnnot(akhir); 
+				         String[] sentence = akhir.split("(?<=[.!?])\\s* ");
+				         Pattern r = Pattern.compile("<START:entity>");
+				         
+				         for (String z : sentence) {
+				         	Matcher v = r.matcher(z);
+				         	
+				         	if(v.find()){
+				         		try{
+				         		out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/annotasi/labelFix/FULL.txt", true));
+				         		out.append(z+" ");
+				         		out.close();
+				         		}catch(IOException ie){
+				         			
+				         		}
+				         	}
+				         }
+
+				         
+					delay(10);
+						
+					}
+					}catch(StackOverflowError soe){
+						System.err.println(soe);
+					}
+					
+					System.out.println("* Kategori '" +  childTerkait.get(i) + "' - ekstraksi selesai");
+				
+				}
+				
+				kategoriTerkait.clear();
+				childTerkait.clear();
+		}
+	
+	public void repairAnnot(){
+		String tempText = null;
+		Pattern p = Pattern.compile("(.*?\\.[ \n](?!(?:\\w+\\s<END>)))");
+		Pattern q = Pattern.compile("<START:entity>");
+		String sentence = null;
+		
+		try{
+		_input = new BufferedReader(new FileReader("X:/Database Berkeley/Output/annotasi/result/works.txt"));
+		}catch(FileNotFoundException fnfe){
+			System.err.println("FILE TIDAK DITEMUKAN \n");
+		}
+		
+		try {
+			while((tempText = _input.readLine()) != null){
+				
+				Matcher m = p.matcher(tempText);
+				
+				while(m.find()){
+					sentence = m.group(1);
+					Matcher n = q.matcher(sentence);
+					
+					if(n.find()){
+						try{
+			         		out = new BufferedWriter(new FileWriter("X:/Database Berkeley/Output/annotasi/result/NEWFULL.txt", true));
+			         		out.append(sentence+"\n");
+			         		out.close();
+			         		}catch(IOException ie){
+			         			
+			         		}
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 
     public static void main(String args[]) throws Exception {
     	WikipediaConfiguration conf = new WikipediaConfiguration(new File("X:/Database Berkeley/wikipedia-miner-1.2.0/wikipedia-template.xml"));
@@ -559,10 +1162,36 @@ public void getCategoryParentChild(int id){
     	//korpus.docer();
     	
     	//korpus.deskriptor();
-    	
+    	//korpus.repairAnnot();
     	//korpus.getArticleByCategory();
-    	
-    	korpus.inputToDatabase();
+    	korpus.setAnnotate("dalam tahun");
+//    	korpus.inputToDatabase("Yahudi", "Mongolia");
+//    	korpus.inputToDatabase("Mongolia", "Bumi");
+//    	korpus.inputToDatabase("Bumi", "Nasal, Kaur");
+//    	korpus.inputToDatabase("Nasal, Kaur", "Galaksi");
+//    	korpus.inputToDatabase("Galaksi", "Dasawarsa");
+//    	korpus.inputToDatabase("Dasawarsa", "Gambar lambang");
+//    	korpus.inputToDatabase("Gambar lambang", "Buruh");
+//    	korpus.inputToDatabase("Buruh", "Geografi Oman");
+//    	korpus.inputToDatabase("Geografi Oman", "Tokoh dari Kuningan");
+//    	korpus.inputToDatabase("Tokoh dari Kuningan", "Region di Italia");
+//    	korpus.inputToDatabase("Region di Italia", "Melbourne");
+//    	korpus.inputToDatabase("Melbourne", "Tokoh Flandria");
+//    	korpus.inputToDatabase("Tokoh Flandria", "Penguasa monarki");
+//    	korpus.inputToDatabase("Penguasa monarki", "Wahyu kepada Yohanes");
+//    	korpus.inputToDatabase("Wahyu kepada Yohanes", "Kelahiran 847");
+//    	korpus.inputToDatabase("Kelahiran 847", "Kue Jepang");
+//    	korpus.inputToDatabase("Kue Jepang", "Kerajaan Blambangan");
+//    	korpus.inputToDatabase("Kerajaan Blambangan", "Penyamak kulit");
+//    	korpus.inputToDatabase("Penyamak kulit", "Kontes kecantikan di Britania Raya");
+//    	korpus.inputToDatabase("Kontes kecantikan di Britania Raya", "Meja");
+//    	korpus.inputToDatabase("Meja", "Maret 2015");
+//    	korpus.inputToDatabase("Maret 2015", "Pengusaha Sunda");
+//    	korpus.inputToDatabase("Pengusaha Sunda", "Myxini");
+//    	korpus.inputToDatabase("Myxini", "Nobel Ekonomi");
+//    	korpus.inputToDatabase("Nobel Ekonomi", "Coimbra");
+//    	korpus.inputToDatabase("Coimbra", "Kejadian 1");
+//    	korpus.inputToDatabase("Kejadian 1", "Yesaya 22");
     	
     	//korpus.getDescFromArticle();
     	/*
